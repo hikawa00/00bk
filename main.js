@@ -88,6 +88,32 @@ const posts = [
       <p><em>我还不太会用</em>，先试试</p>
     `,
   },
+  {
+    id: "post-20260301-235749",
+    title: "今天到此为止",
+    date: "2026-03-01",
+    tags: ["学习"],
+    excerpt: "vibe coding，建站，部署，域名...一晚的“你好，世界”",
+    content: `
+      <h1>终于有了博客。。。吗</h1>
+      <p>其实又已经过了0点了，算第二天</p>
+      <p>今天/昨天做了一些事：</p>
+      <ul>
+      <li>打开<strong>siao</strong> mark的80岁老太vibe coding教程，发现自己不知什么时候已经安装了cursor</li>
+      <li>一句+几句修改让cursor帮我完成了建站前端三件套代码</li>
+      <li>学习（复习？）github仓库pages的静态部署</li>
+      <li>deepseek辅助下买+接域名（hikawa00.top）</li>
+      </ul>
+      <p>> 题外话：遥想当（去）年在wordpress和naclo的建站尝试，也是因为.top当年+续费最便宜买的，如今仍旧惜财穷鬼中...</p>
+      <ul>
+      <li>接editor功能，支持html和md，虽然依旧十分脱裤子放屁，但是先挂着</li>
+      <li>归来半生仍记不住markdown语法，简单学习后编辑此页面</li>
+      </ul>
+      <p>也算是简短的圆了博客梦吗（什么”宝可“梦），当时一直说要搞，拖拖拖也没弄，结果是因为vibe coding哈哈</p>
+      <p>也不知道后面有没有心思继续经营，其实渴望的功能还不少，测试一下cursor实例</p>
+      <p>比如editor应该加一个md效果实时显示...</p>
+    `,
+  },
 ];
 
 // DOM 元素
