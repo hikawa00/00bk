@@ -106,6 +106,10 @@ const tagListEl = document.getElementById("tagList");
 const footerYearEl = document.getElementById("footerYear");
 const navPostsBtn = document.getElementById("navPosts");
 const navAboutBtn = document.getElementById("navAbout");
+const navEditorBtn = document.getElementById("navEditor");
+
+// 简单编辑密码（只用于跳转到 editor.html，安全性有限）
+const EDITOR_PASSWORD = "hikawa00"; // 建议改成你自己的密码
 
 let activeTag = null;
 let searchKeyword = "";
@@ -318,6 +322,17 @@ function init() {
     });
     navAboutBtn.addEventListener("click", () => {
       window.location.hash = "#about";
+    });
+  }
+
+  if (navEditorBtn) {
+    navEditorBtn.addEventListener("click", () => {
+      const pwd = prompt("请输入编辑密码：");
+      if (pwd === EDITOR_PASSWORD) {
+        window.location.href = "editor.html";
+      } else if (pwd !== null) {
+        alert("密码错误");
+      }
     });
   }
 }
