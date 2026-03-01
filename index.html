@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的个人博客</title>
+    <meta
+      name="description"
+      content="一个简单优雅的个人博客，用于记录生活与技术随笔。"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-title">hikawa00的博客</div>
+          <div class="brand-subtitle">vibe coding使我们相遇 ❤ supported by cursor</div>
+        </div>
+        <nav class="main-nav" aria-label="主导航">
+          <button id="navPosts" class="nav-tab nav-tab-active">文章</button>
+          <button id="navAbout" class="nav-tab">关于我</button>
+        </nav>
+      </header>
+
+      <main class="app-main">
+        <aside class="sidebar">
+          <section class="sidebar-section">
+            <h2 class="sidebar-title">搜索</h2>
+            <div class="search-box">
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="搜索文章标题或内容..."
+              />
+            </div>
+          </section>
+
+          <section class="sidebar-section">
+            <h2 class="sidebar-title">分类</h2>
+            <div id="tagList" class="tag-list"></div>
+          </section>
+
+          <section class="sidebar-section">
+            <h2 class="sidebar-title">关于我</h2>
+            <p class="about-text">
+              右上角可以切换到「关于我」页面，展示更完整的自我介绍和头像。
+            </p>
+          </section>
+        </aside>
+
+        <section class="content">
+          <section
+            id="introView"
+            class="view view-hidden"
+            aria-labelledby="introTitle"
+          >
+            <div class="intro-layout">
+              <div class="intro-avatar">
+                <div class="intro-avatar-circle">ME</div>
+              </div>
+              <div class="intro-text">
+                <h1 id="introTitle">你好，我是某某</h1>
+                <p>
+                  这里是你的自我介绍页示例。你可以在
+                  <code>index.html</code> 中修改头像里的文字、标题以及下面的简介内容。
+                </p>
+                <p>
+                  推荐写一点「我是谁、现在在做什么、最近在思考什么」，也可以简单列一下你在
+                  学习、探索、欣赏、创作、积累 这几个方向上想记录的内容。
+                </p>
+                <p>
+                  如果你有自己的照片或插画，可以把
+                  <code>intro-avatar-circle</code>
+                  换成一张图片，让这里真正成为属于你的主页。
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div id="listView" class="view view-active" aria-live="polite">
+            <div class="list-header">
+              <h1>最新文章</h1>
+              <span id="postCount" class="post-count"></span>
+            </div>
+            <div id="postList" class="post-list"></div>
+          </div>
+
+          <article id="detailView" class="view view-hidden">
+            <button id="backToList" class="back-button">← 返回文章列表</button>
+            <header class="post-header">
+              <h1 id="detailTitle"></h1>
+              <div class="post-meta">
+                <span id="detailDate"></span>
+                <span id="detailTags" class="post-tags"></span>
+              </div>
+            </header>
+            <section id="detailContent" class="post-content"></section>
+          </article>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>© <span id="footerYear"></span> 我的个人博客</span>
+        <span class="footer-dot">·</span>
+        <span>由 HTML / CSS / JavaScript 驱动</span>
+      </footer>
+    </div>
+
+    <script src="./main.js"></script>
+  </body>
+</html>
+
