@@ -22,6 +22,26 @@ function escapeForTemplate(str) {
   return str.replace(/\\/g, "\\\\").replace(/`/g, "\\`");
 }
 
+// 简单编辑密码（只在 editor 页面使用，安全性有限）
+const EDITOR_PASSWORD = "hikawa00"; // 建议改成你自己的密码
+
+function ensureEditorAuth() {
+  const authed = sessionStorage.getItem("editor-authed") === "1";
+  if (authed) return true;
+
+  const pwd = prompt("请输入编辑密码：");
+  if (pwd === EDITOR_PASSWORD) {
+    sessionStorage.setItem("editor-authed", "1");
+    return true;
+  }
+
+  if (pwd !== null) {
+    alert("密码错误，将返回博客首页。");
+  }
+  window.location.href = "index.html";
+  return false;
+}
+
 // 非完整 Markdown 解析器，只支持常见语法：标题、粗体/斜体、列表、段落
 function markdownToHtml(md) {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
@@ -155,5 +175,8 @@ ${indentedContent}
   });
 }
 
-document.addEventListener("DOMContentLoaded", initEditor);
+document.addEventListener("DOMContentLoaded", () => {
+  if (!ensureEditorAuth()) return;
+  initEditor();
+});
 
