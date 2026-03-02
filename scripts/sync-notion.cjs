@@ -166,6 +166,19 @@ function blocksToHtml(blocks) {
       continue;
     }
 
+    if (type === "image") {
+      const img = data;
+      const url =
+        img.external?.url || img.file?.url || "";
+      const caption = renderRichTextArray(img.caption || []);
+      if (url) {
+        closeList();
+        const cap = caption ? `<figcaption>${caption}</figcaption>` : "";
+        html.push(`<figure><img src="${escapeHtml(url)}" alt="${escapeHtml(caption)}" loading="lazy" />${cap}</figure>`);
+      }
+      continue;
+    }
+
     // 其他类型简单降级为段落
     const fallback = renderRichTextArray(data.rich_text || []);
     if (fallback) {
