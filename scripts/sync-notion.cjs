@@ -90,6 +90,20 @@ async function fetchBlocks(blockId) {
   return blocks;
 }
 
+/** 递归拉取块及其子块，按文档顺序返回扁平列表（解决栏目/折叠块内图片同步不到的问题） */
+async function fetchAllBlocksRecursive(blockId) {
+  const top = await fetchBlocks(blockId);
+  const result = [];
+  for (const block of top) {
+    result.push(block);
+    if (block.has_children) {
+      const children = await fetchAllBlocksRecursive(block.id);
+      result.push(...children);
+    }
+  }
+  return result;
+}
+
 function blocksToHtml(blocks) {
   const html = [];
   let listType = null; // "ul" or "ol"
@@ -179,6 +193,26 @@ function blocksToHtml(blocks) {
       continue;
     }
 
+    // 链接/嵌入：Notion 有时会把「图片链接」存成 embed/bookmark，这里统一当图片或链接输出
+    if (type === "embed" || type === "bookmark") {
+      const info = data;
+      const url = info.url || "";
+      if (url) {
+        closeList();
+        const isImageUrl = /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url) ||
+          /(imgur|unsplash|img\.bb|cdn\.|cloudinary)/i.test(url);
+        if (isImageUrl) {
+          html.push(`<figure><img src="${escapeHtml(url)}" alt="" loading="lazy" /></figure>`);
+        } else {
+          const caption = type === "bookmark"
+            ? renderRichTextArray(info.caption || []) || "打开链接"
+            : "打开链接";
+          html.push(`<p><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${caption}</a></p>`);
+        }
+      }
+      continue;
+    }
+
     // 其他类型简单降级为段落
     const fallback = renderRichTextArray(data.rich_text || []);
     if (fallback) {
@@ -228,7 +262,7 @@ async function buildPosts() {
         .map((t) => t.plain_text)
         .join("") || "";
 
-    const blocks = await fetchBlocks(page.id);
+    const blocks = await fetchAllBlocksRecursive(page.id);
     const contentHtml = blocksToHtml(blocks);
 
     if (!excerpt) {
