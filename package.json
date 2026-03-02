@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "一个使用原生 HTML / CSS / JavaScript 实现的简洁个人博客。",
   "scripts": {
-    "dev": "npx vite preview --host 0.0.0.0 --port 4173 --strictPort"
+    "dev": "npx vite preview --host 0.0.0.0 --port 4173 --strictPort",
+    "sync:notion": "node scripts/sync-notion.cjs"
   },
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "@notionhq/client": "^2.2.15"
   }
 }
 

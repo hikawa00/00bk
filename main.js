@@ -10,7 +10,8 @@ const CATEGORY_CLASS_MAP = {
 };
 
 // 博客示例数据，你可以按格式添加/修改文章
-const posts = [
+// 如果存在 posts.json，则会在运行时覆盖此数组（作为后备数据）
+let posts = [
   {
     id: "hello-blog",
     title: "你好，博客世界",
@@ -324,8 +325,22 @@ function handleHashChange() {
   showList();
 }
 
-function init() {
+async function loadRemotePosts() {
+  try {
+    const res = await fetch("posts.json", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length) {
+      posts = data;
+    }
+  } catch (err) {
+    console.error("加载 posts.json 失败，将使用内置示例文章。", err);
+  }
+}
+
+async function init() {
   footerYearEl.textContent = new Date().getFullYear();
+  await loadRemotePosts();
   renderTags();
   renderPosts();
   handleHashChange();
@@ -348,5 +363,7 @@ function init() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+});
 
