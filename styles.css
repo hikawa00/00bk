@@ -510,14 +510,17 @@ body {
 
 .post-content .list-level-1 {
   margin-left: 1.2em;
+  list-style-type: circle;
 }
 
 .post-content .list-level-2 {
   margin-left: 2.4em;
+  list-style-type: square;
 }
 
 .post-content .list-level-3 {
   margin-left: 3.6em;
+  list-style-type: square;
 }
 
 .post-content p.empty-line {
