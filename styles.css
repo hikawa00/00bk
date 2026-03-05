@@ -498,8 +498,10 @@ body {
 
 .post-content ul,
 .post-content ol {
-  padding-left: 20px;
+  padding-left: 1.4em;
   margin: 0 0 8px;
+  /* 让项目符号进入内容框内，配合 li 的 margin-left 才能看到明显层级缩进 */
+  list-style-position: inside;
 }
 
 .post-content li[class^="list-level-"],
