@@ -90,14 +90,24 @@ async function fetchBlocks(blockId) {
   return blocks;
 }
 
-/** 递归拉取块及其子块，按文档顺序返回扁平列表（解决栏目/折叠块内图片同步不到的问题） */
-async function fetchAllBlocksRecursive(blockId) {
+/** 递归拉取块及其子块，按文档顺序返回扁平列表（解决栏目/折叠块内图片同步不到的问题）
+ *  同时在 block 上打：
+ *    - _depth: 嵌套层级，用于列表/表格等的缩进渲染
+ *    - _parentId: 父块 id，用于把 table_row 等块归到对应 table 下
+ */
+async function fetchAllBlocksRecursive(blockId, depth = 0, parentId = null) {
   const top = await fetchBlocks(blockId);
   const result = [];
   for (const block of top) {
+    block._depth = depth;
+    block._parentId = parentId;
     result.push(block);
     if (block.has_children) {
-      const children = await fetchAllBlocksRecursive(block.id);
+      const children = await fetchAllBlocksRecursive(
+        block.id,
+        depth + 1,
+        block.id
+      );
       result.push(...children);
     }
   }
@@ -107,6 +117,38 @@ async function fetchAllBlocksRecursive(blockId) {
 function blocksToHtml(blocks) {
   const html = [];
   let listType = null; // "ul" or "ol"
+
+  // 计算当前文档中列表块的最小嵌套层级，作为 0 级基线
+  const listBaseDepth = (() => {
+    if (!Array.isArray(blocks) || !blocks.length) return 0;
+    const depths = blocks
+      .filter(
+        (b) =>
+          b &&
+          (b.type === "bulleted_list_item" || b.type === "numbered_list_item")
+      )
+      .map((b) => (typeof b._depth === "number" ? b._depth : 0));
+    if (!depths.length) return 0;
+    return Math.min(...depths);
+  })();
+
+  // 表格渲染状态（Notion table + table_row）
+  let inTable = false;
+  let currentTableId = null;
+  let tableHasColumnHeader = false;
+  let tableHasRowHeader = false;
+  let tableRowIndex = 0;
+
+  function closeTable() {
+    if (inTable) {
+      html.push(`</tbody></table></div>`);
+      inTable = false;
+      currentTableId = null;
+      tableHasColumnHeader = false;
+      tableHasRowHeader = false;
+      tableRowIndex = 0;
+    }
+  }
 
   function closeList() {
     if (listType) {
@@ -119,13 +161,88 @@ function blocksToHtml(blocks) {
     const { type } = block;
     const data = block[type];
 
+    // 如果当前在表格里，但遇到了不属于当前表格的块，则先把表格闭合
+    if (
+      inTable &&
+      (type !== "table_row" || block._parentId !== currentTableId)
+    ) {
+      closeTable();
+    }
+
     if (!data) continue;
+
+    // Notion 表格本体（结构信息）
+    if (type === "table") {
+      const tableData = data;
+      closeList();
+      closeTable();
+
+      inTable = true;
+      currentTableId = block.id;
+      tableHasColumnHeader = !!tableData.has_column_header;
+      tableHasRowHeader = !!tableData.has_row_header;
+      tableRowIndex = 0;
+
+      html.push(
+        `<div class="notion-table-wrapper"><table class="notion-table"><tbody>`
+      );
+      continue;
+    }
+
+    // Notion 表格行
+    if (type === "table_row") {
+      const rowData = data;
+      const cells = rowData.cells || [];
+
+      // 理论上 table_row 一定有父 table；如果没命中，就临时开一个表格包起来
+      if (!inTable) {
+        closeList();
+        inTable = true;
+        currentTableId = block._parentId || null;
+        tableHasColumnHeader = false;
+        tableHasRowHeader = false;
+        tableRowIndex = 0;
+        html.push(
+          `<div class="notion-table-wrapper"><table class="notion-table"><tbody>`
+        );
+      }
+
+      const isHeaderRow = tableHasColumnHeader && tableRowIndex === 0;
+
+      const rowHtml = cells
+        .map((cell, idx) => {
+          const content = renderRichTextArray(cell || []);
+          let tag = "td";
+          let extraAttr = "";
+
+          if (isHeaderRow) {
+            tag = "th";
+            extraAttr = ' scope="col"';
+          } else if (tableHasRowHeader && idx === 0) {
+            tag = "th";
+            extraAttr = ' scope="row"';
+          }
+
+          return `<${tag}${extraAttr}>${content}</${tag}>`;
+        })
+        .join("");
+
+      html.push(`<tr>${rowHtml}</tr>`);
+      tableRowIndex += 1;
+      continue;
+    }
 
     if (type === "paragraph") {
       const text = renderRichTextArray(data.rich_text);
       if (text) {
         closeList();
+        closeTable();
         html.push(`<p>${text}</p>`);
+      } else {
+        // Notion 里的纯空段落，用一个空行占位，避免被完全吞掉
+        closeList();
+        closeTable();
+        html.push(`<p class="empty-line">&nbsp;</p>`);
       }
       continue;
     }
@@ -135,23 +252,28 @@ function blocksToHtml(blocks) {
       const text = renderRichTextArray(data.rich_text);
       if (text) {
         closeList();
+        closeTable();
         html.push(`<h${level}>${text}</h${level}>`);
       }
       continue;
     }
 
     if (type === "bulleted_list_item" || type === "numbered_list_item") {
-      const desired =
-        type === "bulleted_list_item" ? "ul" : "ol";
+      const desired = type === "bulleted_list_item" ? "ul" : "ol";
       if (listType && listType !== desired) {
         closeList();
       }
       if (!listType) {
+        closeTable();
         listType = desired;
         html.push(`<${listType}>`);
       }
       const text = renderRichTextArray(data.rich_text);
-      html.push(`<li>${text}</li>`);
+      const depth =
+        typeof block._depth === "number" ? block._depth : listBaseDepth;
+      const level = Math.max(0, depth - listBaseDepth);
+      const levelClass = level > 0 ? ` class="list-level-${level}"` : "";
+      html.push(`<li${levelClass}>${text}</li>`);
       continue;
     }
 
@@ -159,6 +281,7 @@ function blocksToHtml(blocks) {
       const text = renderRichTextArray(data.rich_text);
       if (text) {
         closeList();
+        closeTable();
         html.push(`<blockquote>${text}</blockquote>`);
       }
       continue;
@@ -168,6 +291,7 @@ function blocksToHtml(blocks) {
       const text = renderRichTextArray(data.rich_text);
       const lang = data.language || "";
       closeList();
+      closeTable();
       html.push(
         `<pre><code class="language-${escapeHtml(lang)}">${text}</code></pre>`
       );
@@ -176,6 +300,7 @@ function blocksToHtml(blocks) {
 
     if (type === "divider") {
       closeList();
+      closeTable();
       html.push("<hr />");
       continue;
     }
@@ -187,6 +312,7 @@ function blocksToHtml(blocks) {
       const caption = renderRichTextArray(img.caption || []);
       if (url) {
         closeList();
+        closeTable();
         const cap = caption ? `<figcaption>${caption}</figcaption>` : "";
         html.push(`<figure><img src="${escapeHtml(url)}" alt="${escapeHtml(caption)}" loading="lazy" />${cap}</figure>`);
       }
@@ -199,6 +325,7 @@ function blocksToHtml(blocks) {
       const url = info.url || "";
       if (url) {
         closeList();
+        closeTable();
         const isImageUrl = /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url) ||
           /(imgur|unsplash|img\.bb|cdn\.|cloudinary)/i.test(url);
         if (isImageUrl) {
@@ -217,10 +344,12 @@ function blocksToHtml(blocks) {
     const fallback = renderRichTextArray(data.rich_text || []);
     if (fallback) {
       closeList();
+      closeTable();
       html.push(`<p>${fallback}</p>`);
     }
   }
 
+  closeTable();
   closeList();
   return html.join("\n");
 }
